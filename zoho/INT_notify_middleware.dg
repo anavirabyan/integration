@@ -1,0 +1,35 @@
+// Zoho CRM -> Setup -> Automation -> Actions -> Functions -> New function
+// Name:      INT_notify_middleware
+// Module:    Deals
+// Arguments: deal_id (Deals - Deal Id), stage (Deals - Stage)
+//
+// Called by Workflow Rule INT_Stage_To_Middleware:
+//   Module Deals, "when a record is edited", condition: Stage is modified to
+//   Contracting OR Closed Deal, instant action -> this function.
+//
+// Org Variable INT_TOKEN must hold the same value as INBOUND_TOKEN on Render.
+// The function only notifies the middleware; all logic lives in the middleware.
+
+payload = Map();
+payload.put("deal_id", deal_id);
+payload.put("stage", stage);
+
+headers = Map();
+headers.put("Content-Type", "application/json");
+headers.put("X-Int-Token", zoho.crm.getOrgVariable("INT_TOKEN"));
+
+resp = invokeurl
+[
+	url :"https://<service>.onrender.com/zoho/deal-stage"
+	type :POST
+	parameters:payload.toString()
+	headers:headers
+	detailed:true
+];
+
+// 202 = accepted. Anything else: the deal is NOT blocked, but log it so it is visible
+// in Zoho (Setup -> Developer Space -> Functions -> Logs).
+if(resp.get("responseCode") != 202)
+{
+	info "INT_notify_middleware: " + resp.get("responseCode") + " " + resp.get("responseText");
+}

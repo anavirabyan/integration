@@ -1,0 +1,50 @@
+# Render Blueprint: one always-on web service + one PostgreSQL database in the same region.
+# Secrets are marked sync: false -> fill them in the Render dashboard, never in git.
+services:
+  - type: web
+    name: autotechno-integration
+    runtime: python
+    region: frankfurt
+    plan: starter               # always-on; the free plan sleeps and loses webhooks
+    buildCommand: pip install -r requirements.txt
+    preDeployCommand: python -m integration.migrate
+    # One worker so the scheduler runs once per instance; threads handle concurrent webhooks.
+    startCommand: gunicorn wsgi:app --workers 1 --threads 8 --timeout 120 --bind 0.0.0.0:$PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      - key: DATABASE_URL
+        fromDatabase: { name: autotechno-integration-db, property: connectionString }
+      - { key: TZ_NAME, value: Asia/Tbilisi }
+      - { key: RUN_SCHEDULER, value: "true" }
+      - { key: LOG_LEVEL, value: INFO }
+      - { key: ZOHO_DC, value: eu }
+      - { key: ZOHO_API_VERSION, value: v8 }
+      - { key: ZOHO_CLIENT_ID, sync: false }
+      - { key: ZOHO_CLIENT_SECRET, sync: false }
+      - { key: ZOHO_REFRESH_TOKEN, sync: false }
+      - { key: ZOHO_ORG_URL, sync: false }
+      - { key: CLICKUP_TOKEN, sync: false }
+      - { key: CLICKUP_TEAM_ID, sync: false }
+      - { key: CLICKUP_SERVICE_USER_ID, sync: false }
+      - { key: CLICKUP_EXECUTION_SPACE_ID, sync: false }
+      - { key: CLICKUP_CONTRACTS_LIST_ID, sync: false }
+      - { key: CLICKUP_INCIDENTS_LIST_ID, sync: false }
+      - { key: CLICKUP_WEBHOOK_SECRET, sync: false }
+      - { key: CLICKUP_CONTRACTS_WEBHOOK_SECRET, sync: false }
+      - { key: BALANCE_BASE_URL, sync: false }
+      - { key: BALANCE_USER, sync: false }
+      - { key: BALANCE_PASS, sync: false }
+      - { key: BALANCE_NODE_CODE, sync: false }
+      - { key: BALANCE_PRICE_TYPE, sync: false }
+      - { key: BALANCE_WAREHOUSES, sync: false }
+      - key: INBOUND_TOKEN
+        generateValue: true
+
+databases:
+  - name: autotechno-integration-db
+    region: frankfurt
+    plan: basic-256mb           # the free database is deleted after 30 days
+    databaseName: integration
+    ipAllowList: []             # add the Power BI gateway / office IP for pbi_reader only

@@ -74,8 +74,9 @@ tests/                unit tests with fakes + tests/sql/check_db.sql
 5. **Balance:** enable web-service export, create the exchange node and a read-only user,
    export the JSON descriptions into `docs/balance/`, then confirm the field names in
    `balance_schema.py` and `BALANCE_CHANGE_HEADER`.
-6. **First load:** Render Shell → `python -m scripts.backfill --sales 2024-01-01 --contracts`.
-7. **Power BI:** `ALTER ROLE pbi_reader PASSWORD '...';` (psql, not in git), allow the gateway IP
+6. **Check:** Render Shell → `python -m scripts.check_connections` — every line must be ✅.
+7. **First load:** Render Shell → `python -m scripts.backfill --sales 2024-01-01 --contracts`.
+8. **Power BI:** `ALTER ROLE pbi_reader PASSWORD '...';` (psql, not in git), allow the gateway IP
    in the database access list, connect with the PostgreSQL connector (SSL, Import) to `bi.*` views.
 
 ## Operations

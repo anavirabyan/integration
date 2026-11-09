@@ -5,7 +5,7 @@ services:
     name: autotechno-integration
     runtime: python
     region: frankfurt
-    plan: starter               # always-on; the free plan sleeps and loses webhooks
+    plan: 0.5c-512mb            # $7/month, always on; the free plan sleeps and loses webhooks
     buildCommand: pip install -r requirements.txt
     preDeployCommand: python -m integration.migrate
     # One worker so the scheduler runs once per instance; threads handle concurrent webhooks.
@@ -19,6 +19,13 @@ services:
       - { key: TZ_NAME, value: Asia/Tbilisi }
       - { key: RUN_SCHEDULER, value: "true" }
       - { key: LOG_LEVEL, value: INFO }
+      # Flows stay off until their systems are connected; switch to "true" one by one.
+      - { key: FLOW_F1_ENABLED, value: "false" }   # Balance -> Zoho products
+      - { key: FLOW_F2_ENABLED, value: "false" }   # Balance debts -> Zoho / ClickUp
+      - { key: FLOW_F3_ENABLED, value: "false" }   # Zoho stage -> ClickUp tasks
+      - { key: FLOW_F4_ENABLED, value: "false" }   # ClickUp status -> Zoho
+      - { key: FLOW_F5_ENABLED, value: "false" }   # loads for Power BI
+      - { key: FLOW_F7_ENABLED, value: "true" }    # supplier payments (ClickUp only)
       - { key: ZOHO_DC, value: eu }
       - { key: ZOHO_API_VERSION, value: v8 }
       - { key: ZOHO_CLIENT_ID, sync: false }
@@ -45,6 +52,6 @@ services:
 databases:
   - name: autotechno-integration-db
     region: frankfurt
-    plan: basic-256mb           # the free database is deleted after 30 days
+    plan: 0.1c-256mb            # $6/month; the free database is deleted after 30 days
     databaseName: integration
-    ipAllowList: []             # add the Power BI gateway / office IP for pbi_reader only
+    ipAllowList: []             # [] = no external access; add the Power BI gateway / office IP later
